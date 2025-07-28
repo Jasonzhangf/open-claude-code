@@ -20,3 +20,9 @@ logs
 # Cache
 .npm
 .yarn-cache
+
+#venv
+venv
+
+# Documentation
+docs/
