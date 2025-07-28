@@ -1,25 +1,29 @@
 #!/bin/bash
+#
+# Open-Claude-Code Local Installation Script
+# This script builds, packs, and installs the project globally.
 
-# Claude Code Local Installation Script
-# This script builds, packs, and installs the project globally
+echo "🚀 Starting Open-Claude-Code local installation..."
 
-echo "Starting Claude Code local installation..."
-
-# Build the project
-echo "Building project..."
-npm run build
+# Step 1: Build the project
+echo "
+Building project..."
+./build.sh
 
 if [ $? -ne 0 ]; then
-  echo "Build failed. Aborting installation."
+  echo "
+❌ Build failed. Aborting installation." >&2
   exit 1
 fi
 
-# Pack the project
-echo "Packing project..."
+# Step 2: Pack the project into a tarball
+echo "
+Packing project..."
 npm pack
 
 if [ $? -ne 0 ]; then
-  echo "Pack failed. Aborting installation."
+  echo "
+❌ npm pack failed. Aborting installation." >&2
   exit 1
 fi
 
@@ -27,30 +31,28 @@ fi
 TARBALL=$(ls open-claude-code-*.tgz 2>/dev/null | head -n 1)
 
 if [ -z "$TARBALL" ]; then
-  echo "No tarball found. Aborting installation."
+  echo "
+❌ No tarball found. Aborting installation." >&2
   exit 1
 fi
 
-# Install globally
-echo "Installing $TARBALL globally..."
+# Step 3: Install the package globally
+echo "
+Installing $TARBALL globally..."
 npm install -g "$TARBALL"
 
 if [ $? -ne 0 ]; then
-  echo "Global installation failed."
+  echo "
+❌ Global installation failed." >&2
+  rm -f "$TARBALL" # Clean up
   exit 1
 fi
 
-# Clean up
-echo "Cleaning up..."
+# Step 4: Clean up the tarball
+echo "
+Cleaning up..."
 rm -f "$TARBALL"
 
-# Verify installation
-echo "Verifying installation..."
-which open-claude-code
-
-if [ $? -eq 0 ]; then
-  echo "Claude Code successfully installed globally!"
-else
-  echo "Installation verification failed."
-  exit 1
-fi
+echo "
+✅ Open-Claude-Code successfully installed globally!"
+echo "You can now run it from anywhere by typing: open-claude-code"

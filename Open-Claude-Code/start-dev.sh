@@ -1,31 +1,25 @@
 #!/bin/bash
+#
+# Open-Claude-Code Development Start Script
+# This script builds the project and starts the interactive CLI.
 
-# Claude Code Development Start Script
-# This script starts the development server with logging
+echo "🚀 Starting Open-Claude-Code in development mode..."
 
-# Define log file
-LOG_FILE="/tmp/ccr-dev.log"
-
-# Create/update log file
-touch "$LOG_FILE"
-
-# Start the development server in the background with logging
-echo "Starting Claude Code development server..."
-echo "Logging to $LOG_FILE"
-
-# Build first
+# Step 1: Build the project
+echo "
+Building project..."
 ./build.sh
 
 if [ $? -ne 0 ]; then
-  echo "Build failed. Aborting start."
+  echo "
+❌ Build failed. Aborting start." >&2
   exit 1
 fi
 
-# Start server with logging
-node dist/index.js > "$LOG_FILE" 2>&1 &
+echo "
+✅ Build successful!"
 
-# Capture the process ID
-echo $! > /tmp/ccr-dev.pid
-
-echo "Development server started with PID $(cat /tmp/ccr-dev.pid)"
-echo "Use 'tail -f $LOG_FILE' to monitor logs"
+# Step 2: Start the application
+echo "
+Launching CLI... (Press Ctrl+C to exit)"
+node dist/index.js
