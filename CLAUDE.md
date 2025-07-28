@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+## 🔴 重要开发规则 🔴
+
+**在开始任何开发工作前，必须首先查阅并更新位于 `Open-Claude-Code/DEVELOPMENT_PLAN.md` 的开发计划与进度跟踪文件。**
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
@@ -30,10 +34,14 @@ The main content is organized as follows. See `README.md` for a full file tree.
 The analysis process involves pre-processing the source code and then performing static and dynamic analysis. The primary scripts for pre-processing are:
 
 -   **Beautify Code**: Formats the raw, obfuscated source code for readability.
-    ```bash
+    
+```bash
     node claude_code_v_1.0.33/stage1_analysis_workspace/scripts/beautify.js <source_file>
     ```
+
 -   **Split Code**: Breaks the beautified code into smaller chunks for easier analysis.
-    ```bash
+    
+```bash
     node claude_code_v_1.0.33/stage1_analysis_workspace/scripts/split.js <beautified_file>
     ```
+
