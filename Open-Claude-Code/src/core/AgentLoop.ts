@@ -11,11 +11,13 @@ export class AgentLoop {
   private agents: Map<string, Agent> = new Map();
   private tools: Map<string, Tool> = new Map();
   private messageQueue: MessageQueue;
+  private outputQueue: MessageQueue;
   private config: AgentLoopConfig;
   private isRunning: boolean = false;
 
-  constructor(messageQueue: MessageQueue, config: AgentLoopConfig) {
+  constructor(messageQueue: MessageQueue, outputQueue: MessageQueue, config: AgentLoopConfig) {
     this.messageQueue = messageQueue;
+    this.outputQueue = outputQueue;
     this.config = config;
   }
 
@@ -63,7 +65,12 @@ export class AgentLoop {
   }
 
   private async processMessage(message: Message): Promise<void> {
-    console.log(`Processing message of type: ${message.type}`);
+    this.outputQueue.enqueue({
+      id: message.id,
+      type: 'status_update',
+      payload: { status: `Processing message of type: ${message.type}` },
+      timestamp: Date.now()
+    });
     
     // This is a simplified message processing logic
     // In a real implementation, this would be much more complex
@@ -83,17 +90,38 @@ export class AgentLoop {
     const { toolName, params } = message.payload;
     const tool = this.tools.get(toolName);
     
+    this.outputQueue.enqueue({
+      id: message.id,
+      type: 'status_update',
+      payload: { status: `Using tool: ${toolName}` },
+      timestamp: Date.now()
+    });
+
     if (!tool) {
-      console.error(`Tool not found: ${toolName}`);
+      this.outputQueue.enqueue({
+        id: message.id,
+        type: 'tool_result',
+        payload: { success: false, error: `Tool not found: ${toolName}` },
+        timestamp: Date.now()
+      });
       return;
     }
     
     try {
       const result = await tool.execute(params);
-      console.log(`Tool ${toolName} executed with result:`, result);
-      // In a real implementation, we'd send the result back as a new message
-    } catch (error) {
-      console.error(`Error executing tool ${toolName}:`, error);
+      this.outputQueue.enqueue({
+        id: message.id,
+        type: 'tool_result',
+        payload: result,
+        timestamp: Date.now()
+      });
+    } catch (error: any) {
+      this.outputQueue.enqueue({
+        id: message.id,
+        type: 'tool_result',
+        payload: { success: false, error: `Error executing tool ${toolName}: ${error.message}` },
+        timestamp: Date.now()
+      });
     }
   }
 

@@ -19,7 +19,8 @@ function main() {
         console.log('Starting Claude Code replica...');
         // Initialize core components
         const messageQueue = new MessageQueue_1.AsyncMessageQueue();
-        const agentLoop = new AgentLoop_1.AgentLoop(messageQueue, {
+        const outputQueue = new MessageQueue_1.AsyncMessageQueue();
+        const agentLoop = new AgentLoop_1.AgentLoop(messageQueue, outputQueue, {
             maxConcurrentTasks: 10,
             taskTimeout: 30000
         });
@@ -37,20 +38,46 @@ function main() {
         // Start the agent loop
         console.log('Starting agent loop...');
         agentLoop.start().catch(console.error);
-        // Simulate sending a message after a short delay
-        setTimeout(() => {
-            messageQueue.enqueue({
-                id: '1',
-                type: 'tool_call',
-                payload: {
-                    toolName: 'Read',
-                    params: {
-                        file_path: 'package.json'
+        // Start a simple CLI for user input
+        const readline = require('readline').createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+        function askQuestion() {
+            readline.question('Enter a command: ', (command) => {
+                // For now, let's just simulate a tool call based on the command
+                messageQueue.enqueue({
+                    id: Date.now().toString(),
+                    type: 'tool_call',
+                    payload: {
+                        toolName: 'Read',
+                        params: { file_path: command }
+                    },
+                    timestamp: Date.now()
+                }).catch(console.error);
+                askQuestion(); // Ask for the next command
+            });
+        }
+        askQuestion();
+        function handleOutput() {
+            return __awaiter(this, void 0, void 0, function* () {
+                while (true) {
+                    const output = yield outputQueue.dequeue();
+                    if (output) {
+                        if (output.type === 'status_update') {
+                            console.log(`\n[STATUS] ${output.payload.status}`);
+                        }
+                        else if (output.type === 'tool_result') {
+                            console.log('\n--- Agent Output ---');
+                            console.log(JSON.stringify(output.payload, null, 2));
+                            console.log('--------------------');
+                        }
+                        process.stdout.write('\nEnter a command: ');
                     }
-                },
-                timestamp: Date.now()
-            }).catch(console.error);
-        }, 1000);
+                }
+            });
+        }
+        handleOutput().catch(console.error);
     });
 }
 main().catch(console.error);

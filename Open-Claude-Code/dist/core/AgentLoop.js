@@ -11,11 +11,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AgentLoop = void 0;
 class AgentLoop {
-    constructor(messageQueue, config) {
+    constructor(messageQueue, outputQueue, config) {
         this.agents = new Map();
         this.tools = new Map();
         this.isRunning = false;
         this.messageQueue = messageQueue;
+        this.outputQueue = outputQueue;
         this.config = config;
     }
     registerAgent(agent) {
@@ -60,7 +61,12 @@ class AgentLoop {
     }
     processMessage(message) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log(`Processing message of type: ${message.type}`);
+            this.outputQueue.enqueue({
+                id: message.id,
+                type: 'status_update',
+                payload: { status: `Processing message of type: ${message.type}` },
+                timestamp: Date.now()
+            });
             // This is a simplified message processing logic
             // In a real implementation, this would be much more complex
             switch (message.type) {
@@ -79,17 +85,37 @@ class AgentLoop {
         return __awaiter(this, void 0, void 0, function* () {
             const { toolName, params } = message.payload;
             const tool = this.tools.get(toolName);
+            this.outputQueue.enqueue({
+                id: message.id,
+                type: 'status_update',
+                payload: { status: `Using tool: ${toolName}` },
+                timestamp: Date.now()
+            });
             if (!tool) {
-                console.error(`Tool not found: ${toolName}`);
+                this.outputQueue.enqueue({
+                    id: message.id,
+                    type: 'tool_result',
+                    payload: { success: false, error: `Tool not found: ${toolName}` },
+                    timestamp: Date.now()
+                });
                 return;
             }
             try {
                 const result = yield tool.execute(params);
-                console.log(`Tool ${toolName} executed with result:`, result);
-                // In a real implementation, we'd send the result back as a new message
+                this.outputQueue.enqueue({
+                    id: message.id,
+                    type: 'tool_result',
+                    payload: result,
+                    timestamp: Date.now()
+                });
             }
             catch (error) {
-                console.error(`Error executing tool ${toolName}:`, error);
+                this.outputQueue.enqueue({
+                    id: message.id,
+                    type: 'tool_result',
+                    payload: { success: false, error: `Error executing tool ${toolName}: ${error.message}` },
+                    timestamp: Date.now()
+                });
             }
         });
     }
